@@ -1,4 +1,4 @@
-# Todo App
+# Study AI
 
 Una aplicación de gestión de tareas desarrollada en Flutter con integración de Supabase para almacenamiento de datos.
 
