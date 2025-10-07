@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:todo/presentation/utils/lottie_transition.dart';
+import 'package:todo/presentation/routes.dart';
+
+enum NavbarAuthMode { none, login, register }
 
 class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
   final bool transparent;
-  const AppNavbar({super.key, this.transparent = true});
+  final NavbarAuthMode authMode;
+
+  const AppNavbar({
+    super.key,
+    this.transparent = false,
+    this.authMode = NavbarAuthMode.none,
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
@@ -11,31 +20,104 @@ class AppNavbar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bg = transparent ? Colors.transparent : Colors.white;
+
+    final showBackButton =
+        authMode == NavbarAuthMode.login || authMode == NavbarAuthMode.register;
+
     return AppBar(
-      elevation: transparent ? 0 : 2,
-      backgroundColor: transparent ? Colors.transparent : theme.colorScheme.surface,
+      elevation: transparent ? 0 : 6,
+      shadowColor: transparent ? Colors.transparent : Colors.black12,
+      surfaceTintColor: Colors.transparent,
+      backgroundColor: bg,
       centerTitle: false,
-      titleSpacing: 16,
-      title: Row(
-        children: [
-          const Icon(Icons.school_outlined),
-          const SizedBox(width: 8),
-          Text(
-            'StudyAI',
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
-        ],
+      titleSpacing: 12,
+      leadingWidth: showBackButton ? 60 : 0,
+      leading: showBackButton
+          ? IconButton(
+              tooltip: 'Volver',
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+              onPressed: () => LottieScreenTransition.playAndNavigate(
+                context,
+                asset: 'assets/lottie/intro-login.json',
+                routeName: AppRoutes.landing,
+                backgroundColor: const Color.fromARGB(255, 7, 7, 7),
+                speedMultiplier: 3.0,
+              ),
+            )
+          : null,
+      title: InkWell(
+        onTap: () => LottieScreenTransition.playAndNavigate(
+          context,
+          asset: 'assets/lottie/intro-login.json',
+          routeName: AppRoutes.landing,
+          backgroundColor: const Color.fromARGB(255, 12, 12, 12),
+          speedMultiplier: 3.0,
+        ),
+        borderRadius: BorderRadius.circular(6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.school_outlined),
+            const SizedBox(width: 8),
+            Text(
+              'StudyAI',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
       actions: [
-        TextButton(onPressed: () {}, child: const Text('Características')),
-        TextButton(onPressed: () {}, child: const Text('Precios')),
-        TextButton(onPressed: () {}, child: const Text('Soporte')),
-        const SizedBox(width: 8),
-        FilledButton(
-          onPressed: () => Get.toNamed('/login'),
-          child: const Text('Ingresar'),
-        ),
-        const SizedBox(width: 12),
+        if (authMode == NavbarAuthMode.none) ...[
+          FilledButton(
+            onPressed: () => LottieScreenTransition.playAndNavigate(
+              context,
+              asset: 'assets/lottie/intro-login.json',
+              routeName: AppRoutes.login,
+              backgroundColor: const Color.fromARGB(255, 15, 15, 15),
+              speedMultiplier: 3.0,
+            ),
+            child: const Text('Ingresar'),
+          ),
+          const SizedBox(width: 12),
+          OutlinedButton(
+            onPressed: () => LottieScreenTransition.playAndNavigate(
+              context,
+              asset: 'assets/lottie/intro-login.json',
+              routeName: AppRoutes.register,
+              backgroundColor: const Color.fromARGB(255, 12, 12, 12),
+              speedMultiplier: 3.0,
+            ),
+            child: const Text('Registrarse'),
+          ),
+          const SizedBox(width: 16),
+        ] else if (authMode == NavbarAuthMode.login) ...[
+          OutlinedButton(
+            onPressed: () => LottieScreenTransition.playAndNavigate(
+              context,
+              asset: 'assets/lottie/intro-login.json',
+              routeName: AppRoutes.register,
+              backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+              speedMultiplier: 3.0,
+            ),
+            child: const Text('Registrarse'),
+          ),
+          const SizedBox(width: 16),
+        ] else if (authMode == NavbarAuthMode.register) ...[
+          FilledButton(
+            onPressed: () => LottieScreenTransition.playAndNavigate(
+              context,
+              asset: 'assets/lottie/intro-login.json',
+              routeName: AppRoutes.login,
+              backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+              speedMultiplier: 3.0,
+            ),
+            child: const Text('Ingresar'),
+          ),
+          const SizedBox(width: 16),
+        ],
       ],
     );
   }

@@ -65,4 +65,7 @@ flutter:
   assets:
     - .env
     - assets/lottie/study.json
+    - assets/lottie/intro-login.json
+    - assets/lottie/login.json 
+    - assets/lottie/register-animation.json
     

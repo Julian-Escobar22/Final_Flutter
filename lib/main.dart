@@ -32,6 +32,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: AppRoutes.landing,   // 👈 arranca en el landing
       getPages: AppRoutes.pages,         // 👈 rutas definidas
+      unknownRoute: AppRoutes.unknownRoute, // opcional
       debugShowCheckedModeBanner: false,
     );
   }
