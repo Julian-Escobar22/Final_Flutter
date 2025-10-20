@@ -6,7 +6,7 @@ import 'package:todo/presentation/utils/lottie_transition.dart';
 import 'package:todo/presentation/routes.dart';
 import 'package:todo/presentation/widgets/particle_background.dart';
 import 'package:todo/presentation/widgets/app_footer.dart';
-import 'package:todo/presentation/utils/dialogs.dart'; // 👈 ADICIÓN
+import 'package:todo/presentation/utils/dialogs.dart'; 
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
@@ -112,7 +112,7 @@ class _RegisterCardState extends State<_RegisterCard> {
 
     setState(() => _loading = true);
     try {
-      final res = await Supabase.instance.client.auth.signUp(
+      await Supabase.instance.client.auth.signUp(
         email: email,
         password: pass,
       );

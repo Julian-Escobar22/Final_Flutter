@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo/domain/entities/user_entity.dart';
 import 'package:todo/domain/usecases/current_user_usecase.dart';
 import 'package:todo/domain/usecases/sign_in_usecase.dart';
@@ -21,6 +22,8 @@ class AuthController extends GetxController {
   final RxBool loading = false.obs;
   final RxnString error = RxnString();
   final Rxn<UserEntity> user = Rxn<UserEntity>();
+
+  bool get isLoggedIn => user.value != null;
 
   Future<bool> doSignIn(String email, String password) async {
     loading.value = true;
@@ -61,15 +64,38 @@ class AuthController extends GetxController {
     user.value = await currentUser();
   }
 
+  // ----- utilidades directas de Supabase para flows de email -----
+
+  // AuthController.dart
+  Future<void> resetPassword(String email, {String? redirectTo}) async {
+    final sb = Supabase.instance.client;
+
+    // http://localhost:55647
+    final base = Uri.base;
+    final origin =
+        '${base.scheme}://${base.host}${(base.hasPort && base.port != 80 && base.port != 443) ? ':${base.port}' : ''}';
+
+    final webRedirect = '$origin/#/reset'; 
+
+    await sb.auth.resetPasswordForEmail(
+      email,
+      redirectTo: redirectTo ?? webRedirect,
+    );
+  }
+
+  Future<void> resendConfirmation(String email) async {
+    final sb = Supabase.instance.client;
+    await sb.auth.resend(type: OtpType.signup, email: email);
+  }
+
   String _mapError(Object e) {
     final msg = e.toString();
-    if (msg.contains('Invalid login credentials')) {
+    if (msg.contains('Invalid login credentials'))
       return 'Credenciales inválidas';
-    }
-    if (msg.contains('User already registered')) {
+    if (msg.contains('Email not confirmed'))
+      return 'Tu email no está confirmado';
+    if (msg.contains('User already registered'))
       return 'Ese correo ya está registrado';
-    }
     return 'Ocurrió un error. Intenta de nuevo';
-    
   }
 }

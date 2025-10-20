@@ -94,7 +94,8 @@ class _LoginCardState extends State<_LoginCard> {
       await showSuccessDialog(
         context,
         title: 'Correo reenviado',
-        message: 'Te enviamos un nuevo enlace de confirmación a $email. Revisa tu bandeja de entrada o spam.',
+        message:
+            'Te enviamos un nuevo enlace de confirmación a $email. Revisa tu bandeja de entrada o spam.',
       );
     } on AuthException catch (e) {
       if (!mounted) return;
@@ -123,7 +124,7 @@ class _LoginCardState extends State<_LoginCard> {
         context,
         title: '¡Bienvenido!',
         message: 'Inicio de sesión correcto.',
-        onOk: () => Get.offAllNamed(AppRoutes.landing), // luego /home real
+        onOk: () => Get.offAllNamed(AppRoutes.home), // luego /home real
       );
       return;
     }
@@ -132,7 +133,8 @@ class _LoginCardState extends State<_LoginCard> {
     final err = (_auth.error.value ?? 'Error al iniciar sesión').toLowerCase();
 
     // Heurística para el caso "email no confirmado"
-    final isNotConfirmed = err.contains('not confirmed') ||
+    final isNotConfirmed =
+        err.contains('not confirmed') ||
         err.contains('no confirm') ||
         err.contains('email_not_confirmed');
 
@@ -218,7 +220,9 @@ class _LoginCardState extends State<_LoginCard> {
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     onPressed: () => setState(() => _obscure = !_obscure),
-                    icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
+                    icon: Icon(
+                      _obscure ? Icons.visibility : Icons.visibility_off,
+                    ),
                   ),
                 ),
                 validator: (v) {
@@ -232,11 +236,64 @@ class _LoginCardState extends State<_LoginCard> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    final controller = TextEditingController(
+                      text: _email.text.trim(),
+                    );
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Restablecer contraseña'),
+                        content: TextField(
+                          controller: controller,
+                          decoration: const InputDecoration(
+                            labelText: 'Correo',
+                            prefixIcon: Icon(Icons.alternate_email),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancelar'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Enviar'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (ok == true) {
+                      final mail = controller.text.trim();
+                      if (mail.isEmpty) return;
+                      try {
+                        await _auth.resetPassword(
+                          mail,
+                          // 👇 si quieres volver al login después del enlace
+                          redirectTo:
+                              'http://localhost:55647/#/reset', // ajusta a tu puerto actual
+                        );
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Te enviamos un correo para restablecer tu contraseña',
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('No se pudo enviar: $e')),
+                        );
+                      }
+                    }
+                  },
                   child: const Text('¿Olvidaste tu contraseña?'),
                 ),
               ),
-              const SizedBox(height: 6),
 
               SizedBox(
                 width: double.infinity,

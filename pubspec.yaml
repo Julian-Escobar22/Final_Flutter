@@ -70,4 +70,5 @@ flutter:
     - assets/lottie/intro-login.json
     - assets/lottie/login.json 
     - assets/lottie/register-animation.json
+    - assets/lottie/reset_password.json
     
