@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'package:todo/presentation/widgets/app_navbar.dart';
 import 'package:todo/presentation/utils/lottie_transition.dart';
 import 'package:todo/presentation/routes.dart';
 import 'package:todo/presentation/widgets/particle_background.dart';
 import 'package:todo/presentation/widgets/app_footer.dart';
+import 'package:todo/presentation/controllers/auth_controller.dart';
+import 'package:todo/presentation/utils/dialogs.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth;
@@ -20,7 +23,7 @@ class LoginPage extends StatelessWidget {
         final maxCard = isSmall ? w - 24 : 440.0;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF7F0FF), // mismo tono suave del landing
+          backgroundColor: const Color(0xFFF7F0FF),
           appBar: const AppNavbar(authMode: NavbarAuthMode.login),
           body: Stack(
             children: [
@@ -70,7 +73,9 @@ class _LoginCardState extends State<_LoginCard> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _obscure = true;
-  bool _loading = false;
+
+  // GetX controller (inyectado por AuthBindings)
+  late final AuthController _auth = Get.find<AuthController>();
 
   @override
   void dispose() {
@@ -79,14 +84,71 @@ class _LoginCardState extends State<_LoginCard> {
     super.dispose();
   }
 
-  void _submit() async {
+  Future<void> _resendConfirmation(String email) async {
+    try {
+      await Supabase.instance.client.auth.resend(
+        type: OtpType.signup,
+        email: email,
+      );
+      if (!mounted) return;
+      await showSuccessDialog(
+        context,
+        title: 'Correo reenviado',
+        message: 'Te enviamos un nuevo enlace de confirmación a $email. Revisa tu bandeja de entrada o spam.',
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      await showErrorDialog(
+        context,
+        title: 'No se pudo reenviar',
+        message: e.message,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 600));
+
+    final email = _email.text.trim();
+    final pass = _password.text;
+
+    // marca loading desde el controller
+    _auth.loading.value = true;
+    final ok = await _auth.doSignIn(email, pass);
     if (!mounted) return;
-    setState(() => _loading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('UI lista – conectaremos Supabase luego')),
+    _auth.loading.value = false;
+
+    if (ok) {
+      await showSuccessDialog(
+        context,
+        title: '¡Bienvenido!',
+        message: 'Inicio de sesión correcto.',
+        onOk: () => Get.offAllNamed(AppRoutes.landing), // luego /home real
+      );
+      return;
+    }
+
+    // lee mensaje de error expuesto por el controller
+    final err = (_auth.error.value ?? 'Error al iniciar sesión').toLowerCase();
+
+    // Heurística para el caso "email no confirmado"
+    final isNotConfirmed = err.contains('not confirmed') ||
+        err.contains('no confirm') ||
+        err.contains('email_not_confirmed');
+
+    if (isNotConfirmed) {
+      await showEmailNotConfirmedDialog(
+        context,
+        email: email,
+        onResend: () => _resendConfirmation(email),
+      );
+      return;
+    }
+
+    await showErrorDialog(
+      context,
+      title: 'No se pudo iniciar sesión',
+      message: _auth.error.value ?? 'Intenta nuevamente.',
     );
   }
 
@@ -178,13 +240,17 @@ class _LoginCardState extends State<_LoginCard> {
 
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
-                  onPressed: _loading ? null : _submit,
-                  child: _loading
-                      ? const SizedBox(
-                          width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Ingresar'),
+                child: Obx(
+                  () => FilledButton(
+                    onPressed: _auth.loading.value ? null : _submit,
+                    child: _auth.loading.value
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Ingresar'),
+                  ),
                 ),
               ),
 
@@ -198,8 +264,8 @@ class _LoginCardState extends State<_LoginCard> {
                       context,
                       asset: 'assets/lottie/intro-login.json',
                       routeName: AppRoutes.register,
-                      backgroundColor: const Color.fromARGB(255, 2, 2, 2),
-                      speedMultiplier: 3.9,
+                      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+                      speedMultiplier: 4.0,
                     ),
                     child: const Text('Crear una cuenta'),
                   ),

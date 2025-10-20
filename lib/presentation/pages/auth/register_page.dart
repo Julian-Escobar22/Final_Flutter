@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo/presentation/widgets/app_navbar.dart';
 import 'package:todo/presentation/utils/lottie_transition.dart';
 import 'package:todo/presentation/routes.dart';
 import 'package:todo/presentation/widgets/particle_background.dart';
 import 'package:todo/presentation/widgets/app_footer.dart';
+import 'package:todo/presentation/utils/dialogs.dart'; // 👈 ADICIÓN
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth;
@@ -82,15 +82,77 @@ class _RegisterCardState extends State<_RegisterCard> {
     super.dispose();
   }
 
+  Future<void> _resendConfirmation(String email) async {
+    try {
+      await Supabase.instance.client.auth.resend(
+        type: OtpType.signup,
+        email: email,
+      );
+      if (!mounted) return;
+      await showSuccessDialog(
+        context,
+        title: 'Correo reenviado',
+        message: 'Te enviamos un nuevo enlace de confirmación a $email.',
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      await showErrorDialog(
+        context,
+        title: 'No se pudo reenviar',
+        message: e.message,
+      );
+    } catch (_) {}
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final email = _email.text.trim();
+    final pass = _password.text;
+
     setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('UI de registro lista – conectar Supabase después')),
-    );
+    try {
+      final res = await Supabase.instance.client.auth.signUp(
+        email: email,
+        password: pass,
+      );
+
+      if (!mounted) return;
+      setState(() => _loading = false);
+
+      // Siempre mostramos instrucción de confirmación (aunque tengas confirmación desactivada en dev)
+      await showEmailConfirmationSentDialog(
+        context,
+        email: email,
+        onResend: () => _resendConfirmation(email),
+      );
+
+      // Opcional: ir al login luego del OK
+      // ignore: use_build_context_synchronously
+      LottieScreenTransition.playAndNavigate(
+        context,
+        asset: 'assets/lottie/intro-login.json',
+        routeName: AppRoutes.login,
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        speedMultiplier: 4.0,
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      await showErrorDialog(
+        context,
+        title: 'No se pudo crear la cuenta',
+        message: e.message,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      await showErrorDialog(
+        context,
+        title: 'Error inesperado',
+        message: 'Intenta de nuevo.',
+      );
+    }
   }
 
   @override
@@ -211,8 +273,8 @@ class _RegisterCardState extends State<_RegisterCard> {
                       context,
                       asset: 'assets/lottie/intro-login.json',
                       routeName: AppRoutes.login,
-                      backgroundColor: const Color.fromARGB(255, 15, 15, 15),
-                      speedMultiplier: 3.0,
+                      backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+                      speedMultiplier: 4.0,
                     ),
                     child: const Text('Inicia sesión'),
                   ),
