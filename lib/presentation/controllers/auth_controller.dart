@@ -6,6 +6,7 @@ import 'package:todo/domain/usecases/sign_in_usecase.dart';
 import 'package:todo/domain/usecases/sign_out_usecase.dart';
 import 'package:todo/domain/usecases/sign_up_usecase.dart';
 
+
 class AuthController extends GetxController {
   final SignInUseCase signIn;
   final SignUpUseCase signUp;
@@ -65,6 +66,23 @@ class AuthController extends GetxController {
   }
 
   // ----- utilidades directas de Supabase para flows de email -----
+
+  // Metadata cruda (puede estar vacía)
+Map<String, dynamic> get metadata =>
+    Supabase.instance.client.auth.currentUser?.userMetadata ?? {};
+
+// Nombre visible o email (fallback)
+String get displayNameOrEmail {
+  final name = (metadata['full_name'] as String?)?.trim();
+  if (name != null && name.isNotEmpty) return name;
+  return user.value?.email ?? '—';
+}
+
+// Emoji de avatar (puede venir vacío)
+String get avatarEmoji {
+  final a = metadata['avatar'] as String?;
+  return a ?? '';
+}
 
   // AuthController.dart
   Future<void> resetPassword(String email, {String? redirectTo}) async {
