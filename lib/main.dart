@@ -9,29 +9,32 @@ import 'package:todo/core/config/supabase_config.dart';
 import 'package:todo/presentation/routes.dart';
 import 'package:todo/presentation/bindings/auth_bindings.dart';
 import 'package:todo/core/services/ai_service.dart';
+import 'package:todo/core/services/file_service.dart'; // 👈 NUEVO
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // 1) Cargar .env (si falla en web, lo ignoramos para no romper).
+    // 1) Cargar .env
     try {
       await dotenv.load(fileName: ".env");
     } catch (_) {}
 
-    // 2) Inicializar Supabase (tu SupabaseConfig.initialize() debe hacer await Supabase.initialize(...))
+    // 2) Inicializar Supabase
     await SupabaseConfig.initialize();
 
-    // 3) Registrar servicio de IA con claves desde .env (o valores por defecto)
+    // 3) Registrar servicio de IA
     final groqKey  = dotenv.env['GROQ_API_KEY'] ?? '';
     final groqBase = dotenv.env['GROQ_BASE_URL'] ?? 'https://api.groq.com/openai/v1';
     Get.put(AiService(apiKey: groqKey, baseUrl: groqBase), permanent: true);
 
-    // 4) Enlaces mágicos (password recovery/confirm) – para web y mobile
+    // 4) Registrar servicio de archivos 👈 NUEVO
+    Get.put(FileService(Supabase.instance.client), permanent: true);
+
+    // 5) Enlaces mágicos
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final event = data.event;
       if (event == AuthChangeEvent.passwordRecovery) {
-        // En web normalmente llega con el query param, en mobile viene vía deep link
         Get.offAllNamed('/reset');
       }
     });
@@ -58,7 +61,7 @@ class MyApp extends StatelessWidget {
       initialRoute: AppRoutes.landing,
       getPages: AppRoutes.pages,
       unknownRoute: AppRoutes.unknownRoute,
-      initialBinding: AuthBindings(), // registra controladores al inicio
+      initialBinding: AuthBindings(),
       debugShowCheckedModeBanner: false,
     );
   }

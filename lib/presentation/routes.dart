@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:todo/presentation/bindings/auth_bindings.dart';
+import 'package:todo/presentation/bindings/note_bindings.dart'; 
 import 'package:todo/presentation/middlewares/auth_middleware.dart';
 
 import 'package:todo/presentation/pages/home/landing_page.dart';
@@ -21,11 +22,15 @@ class AppRoutes {
     // Público
     GetPage(name: landing, page: () => const LandingPage()),
     GetPage(name: reset, page: () => const ResetPasswordPage()), 
+    
     // Autenticado
     GetPage(
       name: home,
       page: () => const HomeShell(),
-      bindings: [AuthBindings()],
+      bindings: [
+        AuthBindings(),
+        NoteBindings(), 
+      ],
       middlewares: [AuthMiddleware()],
     ),
 
