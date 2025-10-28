@@ -40,8 +40,8 @@ dependencies:
   # Red
   dio: ^5.5.0+1
 
-  # OCR on-device
-  google_mlkit_text_recognition: ^0.13.0
+  # # OCR on-device
+  # google_mlkit_text_recognition: ^0.13.0
 
   # Media
   image_picker: ^1.1.2

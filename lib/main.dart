@@ -14,21 +14,24 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // 🟣 Cargar variables desde .env
-    await dotenv.load(fileName: ".env");
+    // 1) Cargar .env (si falla en web, lo ignoramos para no romper).
+    try {
+      await dotenv.load(fileName: ".env");
+    } catch (_) {}
 
-    // 🔹 Inicializar Supabase (usa valores del .env)
+    // 2) Inicializar Supabase (tu SupabaseConfig.initialize() debe hacer await Supabase.initialize(...))
     await SupabaseConfig.initialize();
 
-    // 🔹 Crear servicio de IA (usa variables del .env)
-    final groqKey = dotenv.env['GROQ_API_KEY'] ?? '';
+    // 3) Registrar servicio de IA con claves desde .env (o valores por defecto)
+    final groqKey  = dotenv.env['GROQ_API_KEY'] ?? '';
     final groqBase = dotenv.env['GROQ_BASE_URL'] ?? 'https://api.groq.com/openai/v1';
     Get.put(AiService(apiKey: groqKey, baseUrl: groqBase), permanent: true);
 
-    // 🔹 Captura enlaces mágicos (reset password, confirmación, etc.)
+    // 4) Enlaces mágicos (password recovery/confirm) – para web y mobile
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final event = data.event;
       if (event == AuthChangeEvent.passwordRecovery) {
+        // En web normalmente llega con el query param, en mobile viene vía deep link
         Get.offAllNamed('/reset');
       }
     });
@@ -55,7 +58,7 @@ class MyApp extends StatelessWidget {
       initialRoute: AppRoutes.landing,
       getPages: AppRoutes.pages,
       unknownRoute: AppRoutes.unknownRoute,
-      initialBinding: AuthBindings(),
+      initialBinding: AuthBindings(), // registra controladores al inicio
       debugShowCheckedModeBanner: false,
     );
   }
