@@ -10,6 +10,7 @@ import 'package:todo/presentation/pages/home/home_shell.dart';
 import 'package:todo/presentation/pages/auth/login_page.dart';
 import 'package:todo/presentation/pages/auth/register_page.dart';
 import 'package:todo/presentation/pages/auth/reset_password_page.dart';
+import 'package:todo/presentation/bindings/quiz_bindings.dart'; 
 
 class AppRoutes {
   static const landing = '/';
@@ -29,7 +30,8 @@ class AppRoutes {
       page: () => const HomeShell(),
       bindings: [
         AuthBindings(),
-        NoteBindings(), 
+        NoteBindings(),
+        QuizBindings(), 
       ],
       middlewares: [AuthMiddleware()],
     ),
