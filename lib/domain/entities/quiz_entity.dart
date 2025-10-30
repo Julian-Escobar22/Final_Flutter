@@ -5,6 +5,8 @@ class QuizEntity {
   final String noteId;
   final String userId;
   final String title;
+  final String difficulty;
+  final int questionCount;
   final List<QuestionEntity> questions;
   final DateTime createdAt;
   final int? lastScore;
@@ -15,6 +17,8 @@ class QuizEntity {
     required this.noteId,
     required this.userId,
     required this.title,
+    required this.difficulty,
+    required this.questionCount,
     this.questions = const [],
     required this.createdAt,
     this.lastScore,
@@ -27,6 +31,8 @@ class QuizEntity {
       noteId: json['note_id'] as String,
       userId: json['user_id'] as String,
       title: json['title'] as String? ?? 'Quiz sin título',
+      difficulty: json['difficulty'] as String? ?? 'medium',
+      questionCount: json['question_count'] as int? ?? 5,
       questions: (json['questions'] as List<dynamic>?)
               ?.map((q) => QuestionEntity.fromJson(q as Map<String, dynamic>))
               .toList() ??
@@ -45,6 +51,8 @@ class QuizEntity {
       'note_id': noteId,
       'user_id': userId,
       'title': title,
+      'difficulty': difficulty,
+      'question_count': questionCount,
       'created_at': createdAt.toIso8601String(),
       'last_score': lastScore,
       'last_attempt_at': lastAttemptAt?.toIso8601String(),
@@ -56,4 +64,15 @@ class QuizEntity {
   String get scoreText => lastScore != null 
       ? '$lastScore/$totalQuestions' 
       : 'Sin intentos';
+      
+  String get difficultyLabel {
+    switch (difficulty) {
+      case 'easy':
+        return 'Fácil';
+      case 'hard':
+        return 'Difícil';
+      default:
+        return 'Media';
+    }
+  }
 }

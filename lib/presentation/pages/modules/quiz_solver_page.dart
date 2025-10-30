@@ -45,7 +45,9 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Pregunta ${currentQuestionIndex + 1} de ${quiz!.questions.length}'),
+        title: Text(
+          'Pregunta ${currentQuestionIndex + 1} de ${quiz!.questions.length}',
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: LinearProgressIndicator(value: progress),
@@ -67,9 +69,8 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
                     // Pregunta
                     Text(
                       question.question,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 32),
 
@@ -168,17 +169,23 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
                   child: Row(
                     children: [
                       Icon(
-                        isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                        isSelected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
                         color: isSelected
                             ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            : Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.5),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           option,
                           style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -261,11 +268,11 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
 
   Widget _buildResultsPage() {
     int correctAnswers = 0;
-    
+
     for (int i = 0; i < quiz!.questions.length; i++) {
       final question = quiz!.questions[i];
       final userAnswer = userAnswers[i] ?? '';
-      
+
       if (_isAnswerCorrect(userAnswer, question.correctAnswer, question.type)) {
         correctAnswers++;
       }
@@ -310,8 +317,8 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
                   Text(
                     passed ? '¡Excelente!' : '¡Sigue practicando!',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -322,9 +329,9 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
                   Text(
                     '$percentage%',
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: passed ? Colors.green : Colors.orange,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: passed ? Colors.green : Colors.orange,
+                    ),
                   ),
                 ],
               ),
@@ -373,7 +380,11 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
   Widget _buildAnswerReview(int index) {
     final question = quiz!.questions[index];
     final userAnswer = userAnswers[index] ?? 'Sin respuesta';
-    final isCorrect = _isAnswerCorrect(userAnswer, question.correctAnswer, question.type);
+    final isCorrect = _isAnswerCorrect(
+      userAnswer,
+      question.correctAnswer,
+      question.type,
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -402,7 +413,10 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Text('Tu respuesta: ', style: TextStyle(fontWeight: FontWeight.w500)),
+                const Text(
+                  'Tu respuesta: ',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
                 Expanded(
                   child: Text(
                     userAnswer,
@@ -418,7 +432,10 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Text('Respuesta correcta: ', style: TextStyle(fontWeight: FontWeight.w500)),
+                  const Text(
+                    'Respuesta correcta: ',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                   Expanded(
                     child: Text(
                       question.correctAnswer,
@@ -442,7 +459,11 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.lightbulb_outline, size: 20, color: Theme.of(context).colorScheme.primary),
+                    Icon(
+                      Icons.lightbulb_outline,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(child: Text(question.explanation!)),
                   ],
@@ -455,10 +476,22 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
     );
   }
 
-  bool _isAnswerCorrect(String userAnswer, String correctAnswer, QuestionType type) {
+  bool _isAnswerCorrect(
+    String userAnswer,
+    String correctAnswer,
+    QuestionType type,
+  ) {
+    // Normaliza ambas respuestas
+    final userNormalized = userAnswer.trim().toLowerCase();
+    final correctNormalized = correctAnswer.trim().toLowerCase();
+
     if (type == QuestionType.fillBlank) {
-      return userAnswer.trim().toLowerCase() == correctAnswer.trim().toLowerCase();
+      // Para completar espacios, acepta si contiene la palabra clave
+      return userNormalized.contains(correctNormalized) ||
+          correctNormalized.contains(userNormalized);
     }
-    return userAnswer == correctAnswer;
+
+    // Para opción múltiple y V/F, compara exactamente
+    return userNormalized == correctNormalized;
   }
 }
