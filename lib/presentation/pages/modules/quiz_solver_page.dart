@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:todo/domain/entities/question_entity.dart';
 import 'package:todo/domain/entities/quiz_entity.dart';
 import 'package:todo/presentation/controllers/quiz_controller.dart';
+import 'package:todo/presentation/controllers/history_controller.dart';
 
 class QuizSolverPage extends StatefulWidget {
   final String quizId;
@@ -262,7 +263,51 @@ class _QuizSolverPageState extends State<QuizSolverPage> {
     );
   }
 
-  void _finishQuiz() {
+  Future<void> _finishQuiz() async {
+    // Calcula el puntaje
+    int correctAnswers = 0;
+
+    for (int i = 0; i < quiz!.questions.length; i++) {
+      final question = quiz!.questions[i];
+      final userAnswer = userAnswers[i] ?? '';
+
+      if (_isAnswerCorrect(userAnswer, question.correctAnswer, question.type)) {
+        correctAnswers++;
+      }
+    }
+
+    debugPrint(
+      '🎯 Intentando guardar resultado: $correctAnswers/${quiz!.questions.length}',
+    );
+    debugPrint('🎯 Quiz ID: ${widget.quizId}');
+
+    // Guarda el resultado en Supabase
+    try {
+      final controller = Get.find<QuizController>();
+      debugPrint('🎯 Controller encontrado, llamando saveQuizResult...');
+
+      await controller.saveQuizResult(
+        quizId: widget.quizId,
+        score: correctAnswers,
+        totalQuestions: quiz!.questions.length,
+      );
+
+      debugPrint('✅ Resultado guardado exitosamente');
+
+      // Actualiza historial
+      if (Get.isRegistered<HistoryController>()) {
+        debugPrint('🔄 Actualizando historial...');
+        await Get.find<HistoryController>().loadData();
+        debugPrint('✅ Historial actualizado');
+      } else {
+        debugPrint('⚠️ HistoryController no registrado');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ ERROR guardando resultado: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
+    }
+
+    // Muestra la página de resultados
     setState(() => showResults = true);
   }
 

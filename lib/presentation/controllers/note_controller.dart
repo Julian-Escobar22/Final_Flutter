@@ -5,6 +5,7 @@ import 'package:todo/domain/entities/note_entity.dart';
 import 'package:todo/domain/usecases/create_note_usecase.dart';
 import 'package:todo/domain/usecases/delete_note_usecase.dart';
 import 'package:todo/domain/usecases/get_notes_usecase.dart';
+import 'package:todo/presentation/controllers/history_controller.dart'; 
 
 class NoteController extends GetxController {
   final GetNotesUseCase getNotes;
@@ -72,6 +73,12 @@ class NoteController extends GetxController {
       );
 
       notes.insert(0, note);
+      
+      
+      if (Get.isRegistered<HistoryController>()) {
+        await Get.find<HistoryController>().loadData();
+      }
+      
       return note;
     } catch (e) {
       debugPrint('Error creating note: $e');
@@ -85,6 +92,11 @@ class NoteController extends GetxController {
     try {
       await deleteNote(noteId);
       notes.removeWhere((n) => n.id == noteId);
+      
+      
+      if (Get.isRegistered<HistoryController>()) {
+        await Get.find<HistoryController>().loadData();
+      }
     } catch (e) {
       debugPrint('Error deleting note: $e');
     }

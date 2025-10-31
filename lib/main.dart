@@ -3,13 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:todo/core/constants/app_colors.dart';
-import 'package:todo/core/config/supabase_config.dart';
 import 'package:todo/presentation/routes.dart';
 import 'package:todo/presentation/bindings/auth_bindings.dart';
 import 'package:todo/core/services/ai_service.dart';
-import 'package:todo/core/services/file_service.dart'; // 👈 NUEVO
+import 'package:todo/core/services/file_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,15 +18,21 @@ Future<void> main() async {
       await dotenv.load(fileName: ".env");
     } catch (_) {}
 
-    // 2) Inicializar Supabase
-    await SupabaseConfig.initialize();
+    await Supabase.initialize(
+      url: dotenv.env['SUPABASE_URL']!,
+      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        autoRefreshToken: true,     
+      ),
+    );
 
     // 3) Registrar servicio de IA
-    final groqKey  = dotenv.env['GROQ_API_KEY'] ?? '';
+    final groqKey = dotenv.env['GROQ_API_KEY'] ?? '';
     final groqBase = dotenv.env['GROQ_BASE_URL'] ?? 'https://api.groq.com/openai/v1';
     Get.put(AiService(apiKey: groqKey, baseUrl: groqBase), permanent: true);
 
-    // 4) Registrar servicio de archivos 👈 NUEVO
+    // 4) Registrar servicio de archivos
     Get.put(FileService(Supabase.instance.client), permanent: true);
 
     // 5) Enlaces mágicos

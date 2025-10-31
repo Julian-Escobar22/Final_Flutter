@@ -32,7 +32,7 @@ class _HomeShellState extends State<HomeShell> {
 
   final _labels = const [
     'Notas / IA',
-    'Cuestionario',
+    'Quiz',
     'OCR',
     'Historial',
     'Subidas',

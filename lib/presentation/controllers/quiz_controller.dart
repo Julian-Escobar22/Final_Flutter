@@ -1,8 +1,11 @@
 import 'package:get/get.dart';
+import 'package:todo/data/datasources/remote/quiz_remote_datasource.dart';
 import 'package:todo/domain/entities/quiz_entity.dart';
 import 'package:todo/domain/usecases/quiz/get_quizzes.dart';
 import 'package:todo/domain/usecases/quiz/generate_quiz.dart';
 import 'package:todo/domain/usecases/quiz/delete_quiz.dart';
+import 'package:todo/presentation/controllers/history_controller.dart';
+import 'package:flutter/foundation.dart';
 
 class QuizController extends GetxController {
   final GetQuizzes getQuizzes;
@@ -43,6 +46,35 @@ class QuizController extends GetxController {
     }
   }
 
+  /// Guarda el resultado de un quiz completado
+  Future<void> saveQuizResult({
+    required String quizId,
+    required int score,
+    required int totalQuestions,
+  }) async {
+    try {
+      // Actualiza el quiz en Supabase con el puntaje y fecha
+      await Get.find<QuizRemoteDataSource>().saveQuizResult(
+        quizId: quizId,
+        score: score,
+        totalQuestions: totalQuestions,
+      );
+
+      // Recarga quizzes para reflejar cambios
+      await loadQuizzes();
+      
+    
+      if (Get.isRegistered<HistoryController>()) {
+        await Get.find<HistoryController>().loadData();
+      }
+      
+      debugPrint('✅ Resultado guardado: $score/$totalQuestions');
+    } catch (e) {
+      debugPrint('❌ Error guardando resultado del quiz: $e');
+      rethrow;
+    }
+  }
+
   /// Genera un nuevo quiz desde una nota
   Future<QuizEntity?> createQuizFromNote({
     required String noteId,
@@ -62,6 +94,11 @@ class QuizController extends GetxController {
 
       // Actualiza la lista
       await loadQuizzes();
+      
+      
+      if (Get.isRegistered<HistoryController>()) {
+        await Get.find<HistoryController>().loadData();
+      }
 
       Get.snackbar(
         'Éxito',
@@ -87,6 +124,11 @@ class QuizController extends GetxController {
     try {
       await deleteQuiz(quizId);
       quizzes.removeWhere((q) => q.id == quizId);
+      
+      // Actualiza historial después de eliminar
+      if (Get.isRegistered<HistoryController>()) {
+        await Get.find<HistoryController>().loadData();
+      }
 
       Get.snackbar(
         'Eliminado',
