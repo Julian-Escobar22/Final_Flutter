@@ -260,48 +260,45 @@ class _NoteDetailSheetState extends State<NoteDetailSheet> {
   }
 
   Widget _buildEmptyChatState(ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 64,
-              color: theme.colorScheme.primary.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Pregúntale a la IA',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Haz preguntas sobre esta nota y obtén respuestas instantáneas',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                _buildSuggestedQuestion('Resume los puntos clave'),
-                _buildSuggestedQuestion('Explica el concepto principal'),
-                _buildSuggestedQuestion('Genera preguntas de práctica'),
-              ],
-            ),
-          ],
+  return SingleChildScrollView( 
+    padding: const EdgeInsets.all(20), 
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.chat_bubble_outline,
+          size: 56, 
+          color: theme.colorScheme.primary.withOpacity(0.3),
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 12), 
+        Text(
+          'Pregúntale a la IA',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 6), 
+        Text(
+          'Haz preguntas sobre esta nota y obtén respuestas instantáneas',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16), 
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.center,
+          children: [
+            _buildSuggestedQuestion('Resume los puntos clave'),
+            _buildSuggestedQuestion('Explica el concepto principal'),
+          ], 
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildSuggestedQuestion(String text) {
     return ActionChip(
@@ -410,58 +407,72 @@ class _NoteDetailSheetState extends State<NoteDetailSheet> {
   }
 
   Widget _buildChatInput(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+  return Container(
+    padding: EdgeInsets.only(
+      left: 16,
+      right: 16,
+      top: 12, 
+      bottom: 12, 
+    ),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, -2),
+        ),
+      ],
+    ),
+    child: SafeArea(
+      top: false, 
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end, 
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _questionController,
+              decoration: InputDecoration(
+                hintText: 'Escribe tu pregunta...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF7F0FF),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10, 
+                ),
+                isDense: true, 
+              ),
+              maxLines: 3, 
+              minLines: 1, 
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _askAI(),
+            ),
+          ),
+          const SizedBox(width: 8),
+          FloatingActionButton(
+            onPressed: _loading ? null : _askAI,
+            mini: true,
+            elevation: 2, 
+            child: _loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.send),
           ),
         ],
       ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _questionController,
-                decoration: InputDecoration(
-                  hintText: 'Escribe tu pregunta...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF7F0FF),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                ),
-                maxLines: null,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _askAI(),
-              ),
-            ),
-            const SizedBox(width: 8),
-            FloatingActionButton(
-              onPressed: _loading ? null : _askAI,
-              mini: true,
-              child: _loading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.send),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
+
 
   String _formatDate(DateTime date) {
     final months = [

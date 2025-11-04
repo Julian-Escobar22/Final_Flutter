@@ -1,9 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:todo/core/utils/supabase_helper.dart';
 
 class HistoryRemoteDataSource {
-  final SupabaseClient supabase;
+   SupabaseClient get supabase => SupabaseHelper.client;
 
-  HistoryRemoteDataSource(this.supabase);
+  HistoryRemoteDataSource();
 
   /// Obtiene estadísticas generales del usuario
   Future<Map<String, dynamic>> getStats() async {

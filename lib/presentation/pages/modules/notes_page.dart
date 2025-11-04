@@ -106,13 +106,22 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   void _showNoteDetail(BuildContext context, NoteEntity note) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => NoteDetailSheet(note: note),
-    );
-  }
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent, // Debe ir aquí, no dentro de Padding
+    builder: (context) {
+      return SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom, // Para teclado
+          ),
+          child: NoteDetailSheet(note: note),
+        ),
+      );
+    },
+  );
+}
 
   Future<void> _confirmDelete(BuildContext context, NoteEntity note) async {
     final confirm = await showDialog<bool>(

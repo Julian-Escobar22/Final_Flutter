@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo/core/services/ai_service.dart';
 import 'package:uuid/uuid.dart';
+import 'package:todo/core/utils/supabase_helper.dart';
+
 
 class QuizRemoteDataSource {
-  final SupabaseClient supabase;
+  SupabaseClient get supabase => SupabaseHelper.client;
   final AiService aiService;
 
-  QuizRemoteDataSource(this.supabase, this.aiService);
+  QuizRemoteDataSource(this.aiService);
 
   /// Obtiene todos los quizzes del usuario actual
   Future<List<Map<String, dynamic>>> getQuizzes() async {

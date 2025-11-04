@@ -2,8 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo/domain/entities/note_entity.dart';
 
 class NoteRemoteDs {
-  final SupabaseClient client;
-  NoteRemoteDs(this.client);
+  SupabaseClient get client => Supabase.instance.client;
+  NoteRemoteDs();
 
   Future<List<NoteEntity>> getNotes() async {
     final user = client.auth.currentUser;
@@ -50,11 +50,17 @@ class NoteRemoteDs {
   Future<void> deleteNote(String noteId) async {
     await client
         .from('notes')
-        .update({'deleted': true, 'updated_at': DateTime.now().toIso8601String()})
+        .update({
+          'deleted': true,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
         .eq('id', noteId);
   }
 
-  Future<NoteEntity> updateNote(String noteId, Map<String, dynamic> updates) async {
+  Future<NoteEntity> updateNote(
+    String noteId,
+    Map<String, dynamic> updates,
+  ) async {
     updates['updated_at'] = DateTime.now().toIso8601String();
     final res = await client
         .from('notes')

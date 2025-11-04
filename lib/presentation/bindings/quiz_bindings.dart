@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo/core/services/ai_service.dart';
 import 'package:todo/data/datasources/remote/quiz_remote_datasource.dart';
 import 'package:todo/data/repositories/quiz_repository_impl.dart';
@@ -14,7 +13,6 @@ class QuizBindings extends Bindings {
     // DataSource
     Get.lazyPut<QuizRemoteDataSource>(
       () => QuizRemoteDataSource(
-        Supabase.instance.client,
         Get.find<AiService>(),
       ),
     );

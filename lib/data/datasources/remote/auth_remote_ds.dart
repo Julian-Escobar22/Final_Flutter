@@ -2,9 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo/domain/entities/user_entity.dart';
 
 class AuthRemoteDs {
-  final SupabaseClient client;
-  AuthRemoteDs(this.client);
-
+   SupabaseClient get client => Supabase.instance.client;
+  AuthRemoteDs();
   Future<UserEntity?> signIn(String email, String password) async {
     final res = await client.auth.signInWithPassword(email: email, password: password);
     final user = res.user;

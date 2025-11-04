@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:todo/data/datasources/remote/history_remote_datasource.dart';
 import 'package:todo/data/repositories/history_repository_impl.dart';
 import 'package:todo/domain/usecases/history/get_stats.dart';
@@ -11,7 +10,7 @@ class HistoryBindings extends Bindings {
   void dependencies() {
     // DataSource
     Get.lazyPut<HistoryRemoteDataSource>(
-      () => HistoryRemoteDataSource(Supabase.instance.client),
+      () => HistoryRemoteDataSource(),
     );
 
     // Repository

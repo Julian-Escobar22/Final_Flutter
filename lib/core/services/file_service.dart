@@ -4,11 +4,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class FileService {
-  final SupabaseClient _client;
+  // 👇 Getter lazy para obtener el cliente cuando se necesita
+  SupabaseClient get client => Supabase.instance.client;
+  
   final ImagePicker _picker = ImagePicker();
-  final String _bucket = 'notes-files'; // Nombre del bucket en Supabase Storage
+  final String _bucket = 'notes-files';
 
-  FileService(this._client);
+  // 👇 Constructor vacío
+  FileService();
 
   /// Seleccionar imagen desde galería (web y móvil)
   Future<Uint8List?> pickImage() async {
@@ -29,12 +32,12 @@ class FileService {
 
   /// Subir bytes a Supabase Storage
   Future<String> uploadFile(Uint8List bytes, String extension) async {
-    final user = _client.auth.currentUser;
+    final user = client.auth.currentUser; // 👈 Usa client (el getter)
     if (user == null) throw Exception('Usuario no autenticado');
 
     final fileName = '${user.id}/${const Uuid().v4()}.$extension';
 
-    await _client.storage.from(_bucket).uploadBinary(
+    await client.storage.from(_bucket).uploadBinary(
           fileName,
           bytes,
           fileOptions: FileOptions(
@@ -43,7 +46,7 @@ class FileService {
           ),
         );
 
-    final publicUrl = _client.storage.from(_bucket).getPublicUrl(fileName);
+    final publicUrl = client.storage.from(_bucket).getPublicUrl(fileName);
     return publicUrl;
   }
 
@@ -51,8 +54,8 @@ class FileService {
   Future<void> deleteFile(String fileUrl) async {
     try {
       final uri = Uri.parse(fileUrl);
-      final path = uri.pathSegments.skip(4).join('/'); // Extrae path después de /storage/v1/object/public/bucket/
-      await _client.storage.from(_bucket).remove([path]);
+      final path = uri.pathSegments.skip(4).join('/');
+      await client.storage.from(_bucket).remove([path]);
     } catch (e) {
       // Ignorar si el archivo no existe
     }

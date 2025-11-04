@@ -101,50 +101,95 @@ class HistoryPage extends StatelessWidget {
   }
 
   Widget _buildStatsCards(BuildContext context, HistoryController controller, bool isSmallScreen) {
-    final stats = controller.stats.value!;
+  final stats = controller.stats.value!;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = isSmallScreen ? 2 : 4;
-        final childAspectRatio = isSmallScreen ? 1.3 : 1.5;
-
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: childAspectRatio,
+  // En móvil, usa Column + Row para evitar overflow
+  if (isSmallScreen) {
+    return Column(
+      children: [
+        Row(
           children: [
-            _StatCard(
-              icon: Icons.note_outlined,
-              title: 'Notas',
-              value: '${stats.totalNotes}',
-              color: Colors.blue,
+            Expanded(
+              child: _StatCard(
+                icon: Icons.note_outlined,
+                title: 'Notas',
+                value: '${stats.totalNotes}',
+                color: Colors.blue,
+              ),
             ),
-            _StatCard(
-              icon: Icons.quiz_outlined,
-              title: 'Quizzes',
-              value: '${stats.totalQuizzes}',
-              color: Colors.orange,
-            ),
-            _StatCard(
-              icon: Icons.check_circle_outline,
-              title: 'Completados',
-              value: '${stats.totalQuizzesCompleted}',
-              color: Colors.green,
-            ),
-            _StatCard(
-              icon: Icons.trending_up,
-              title: 'Promedio',
-              value: '${stats.averageQuizScore.toStringAsFixed(0)}%',
-              color: Colors.purple,
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.quiz_outlined,
+                title: 'Quizzes',
+                value: '${stats.totalQuizzes}',
+                color: Colors.orange,
+              ),
             ),
           ],
-        );
-      },
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.check_circle_outline,
+                title: 'Completados',
+                value: '${stats.totalQuizzesCompleted}',
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.trending_up,
+                title: 'Promedio',
+                value: '${stats.averageQuizScore.toStringAsFixed(0)}%',
+                color: Colors.purple,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
+
+  // Desktop/tablet: usa Grid como antes
+  return GridView.count(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    crossAxisCount: 4,
+    crossAxisSpacing: 16,
+    mainAxisSpacing: 16,
+    childAspectRatio: 1.5,
+    children: [
+      _StatCard(
+        icon: Icons.note_outlined,
+        title: 'Notas',
+        value: '${stats.totalNotes}',
+        color: Colors.blue,
+      ),
+      _StatCard(
+        icon: Icons.quiz_outlined,
+        title: 'Quizzes',
+        value: '${stats.totalQuizzes}',
+        color: Colors.orange,
+      ),
+      _StatCard(
+        icon: Icons.check_circle_outline,
+        title: 'Completados',
+        value: '${stats.totalQuizzesCompleted}',
+        color: Colors.green,
+      ),
+      _StatCard(
+        icon: Icons.trending_up,
+        title: 'Promedio',
+        value: '${stats.averageQuizScore.toStringAsFixed(0)}%',
+        color: Colors.purple,
+      ),
+    ],
+  );
+}
 
   Widget _buildPerformanceChart(BuildContext context, HistoryController controller, bool isSmallScreen) {
     final stats = controller.stats.value!;

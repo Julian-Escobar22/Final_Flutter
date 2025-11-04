@@ -1,6 +1,4 @@
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:todo/data/datasources/remote/note_remote_ds.dart';
 import 'package:todo/data/repositories/note_repository_impl.dart';
 import 'package:todo/domain/repositories/note_repository.dart';
@@ -15,7 +13,7 @@ class NoteBindings extends Bindings {
   void dependencies() {
     // DataSource
     Get.lazyPut<NoteRemoteDs>(
-      () => NoteRemoteDs(Supabase.instance.client),
+      () => NoteRemoteDs(),
       fenix: true,
     );
 
@@ -31,7 +29,7 @@ class NoteBindings extends Bindings {
     Get.lazyPut(() => DeleteNoteUseCase(Get.find<NoteRepository>()), fenix: true);
 
     // Service
-    Get.lazyPut(() => FileService(Supabase.instance.client), fenix: true);
+    Get.lazyPut(() => FileService(), fenix: true);
 
     // Controller
     if (!Get.isRegistered<NoteController>()) {

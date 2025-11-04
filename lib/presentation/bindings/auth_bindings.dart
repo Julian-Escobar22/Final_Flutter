@@ -22,7 +22,7 @@ class AuthBindings extends Bindings {
     // ---------- DATASOURCE ----------
     // Ajusta el nombre si tu clase se llama distinto (p.ej. SupabaseAuthRemoteDs)
     Get.lazyPut<AuthRemoteDs>(
-      () => AuthRemoteDs(Supabase.instance.client),
+      () => AuthRemoteDs(),
       fenix: true,
     );
 
