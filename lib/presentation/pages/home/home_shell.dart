@@ -6,9 +6,8 @@ import 'package:todo/presentation/routes.dart';
 // Módulos (stubs)
 import 'package:todo/presentation/pages/modules/notes_page.dart';
 import 'package:todo/presentation/pages/modules/quiz_page.dart';
-import 'package:todo/presentation/pages/modules/ocr_page.dart';
 import 'package:todo/presentation/pages/modules/history_page.dart';
-import 'package:todo/presentation/pages/modules/uploads_page.dart';
+import 'package:todo/presentation/pages/modules/upload_page.dart';
 import 'package:todo/presentation/pages/home/profile_sheet.dart';
 
 class HomeShell extends StatefulWidget {
@@ -25,15 +24,13 @@ class _HomeShellState extends State<HomeShell> {
   final _pages = const [
     NotesPage(),
     QuizPage(),
-    OcrPage(),
     HistoryPage(),
-    UploadsPage(),
+    UploadPage(),
   ];
 
   final _labels = const [
     'Notas / IA',
     'Quiz',
-    'OCR',
     'Historial',
     'Subidas',
   ];

@@ -1,73 +1,62 @@
-import 'dart:async';
-import 'dart:io';
+import 'dart:async'; 
 import 'dart:typed_data';
-import 'package:file_picker/file_picker.dart';
-import 'package:image_picker/image_picker.dart';
+import 'dart:html' as html;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'file_service_base.dart';
 
-class FileService {
-  //  Getter lazy para obtener el cliente cuando se necesita
+class FileService extends FileServiceBase {
   SupabaseClient get client => Supabase.instance.client;
-
-  final ImagePicker _picker = ImagePicker();
+  
   final String _bucket = 'notes-files';
 
-  //  Constructor vacío
   FileService();
 
-  /// Seleccionar imagen desde galería (web y móvil) - FUNCIÓN ORIGINAL
+  @override
   Future<Uint8List?> pickImage() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1920,
-        imageQuality: 85,
-      );
-
-      if (image == null) return null;
-      return await image.readAsBytes();
-    } catch (e) {
-      throw Exception('Error al seleccionar imagen: $e');
-    }
+    throw UnimplementedError(
+      'pickImage() no está disponible en Web. Usa pickAnyFile() en su lugar.',
+    );
   }
 
-  /// Seleccionar cualquier archivo (imagen, PDF, documento)
+  @override
   Future<(Uint8List?, String?)> pickAnyFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'pdf'],
-        allowMultiple: false,
-      );
+     
+      final input = html.FileUploadInputElement();
+      input.accept = 'image/*,.pdf';
+      input.click();
 
-      if (result == null || result.files.isEmpty) return (null, null);
+      // Esperar a que el usuario seleccione un archivo
+      final completer = Completer<(Uint8List?, String?)>(); 
+      
+      input.onChange.listen((event) async {
+        final files = input.files;
+        if (files == null || files.isEmpty) {
+          completer.complete((null, null));
+          return;
+        }
 
-      final file = result.files.first;
+        final file = files.first;
+        final reader = html.FileReader();
+        
+        reader.onLoad.listen((_) {
+          final result = reader.result as List<int>;
+          final bytes = Uint8List.fromList(result);
+          final extension = file.name.split('.').last.toLowerCase();
+          completer.complete((bytes, extension));
+        });
 
-      // Usa bytes en lugar de xFile
-      final bytes = file.bytes;
-      if (bytes == null) {
- 
-        final path = file.path;
-        if (path == null) return (null, null);
+        reader.readAsArrayBuffer(file);
+      });
 
-        // Usa dart:io para leer el archivo
-        final ioFile = File(path);
-        final fileBytes = await ioFile.readAsBytes();
-        final extension = file.extension?.toLowerCase() ?? '';
-        return (fileBytes, extension);
-      }
-
-      final extension = file.extension?.toLowerCase() ?? '';
-      return (bytes, extension);
+      return completer.future;
     } catch (e) {
       throw Exception('Error seleccionando archivo: $e');
     }
   }
 
-  /// Obtener tipo de archivo - NUEVA
+  @override
   String getFileType(String extension) {
     switch (extension.toLowerCase()) {
       case 'jpg':
@@ -83,9 +72,9 @@ class FileService {
     }
   }
 
-  /// Subir bytes a Supabase Storage - FUNCIÓN ORIGINAL
+  @override
   Future<String> uploadFile(Uint8List bytes, String extension) async {
-    final user = client.auth.currentUser; 
+    final user = client.auth.currentUser;
     if (user == null) throw Exception('Usuario no autenticado');
 
     final fileName = '${user.id}/${const Uuid().v4()}.$extension';
@@ -103,7 +92,7 @@ class FileService {
     return publicUrl;
   }
 
-  /// Eliminar archivo de Storage - FUNCIÓN ORIGINAL
+  @override
   Future<void> deleteFile(String fileUrl) async {
     try {
       final uri = Uri.parse(fileUrl);
@@ -121,6 +110,8 @@ class FileService {
         return 'image/jpeg';
       case 'png':
         return 'image/png';
+      case 'gif':
+        return 'image/gif';
       case 'pdf':
         return 'application/pdf';
       default:

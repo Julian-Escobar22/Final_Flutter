@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import 'package:todo/presentation/bindings/auth_bindings.dart';
 import 'package:todo/presentation/bindings/note_bindings.dart';
+import 'package:todo/presentation/bindings/upload_bindings.dart';
 import 'package:todo/presentation/middlewares/auth_middleware.dart';
 
 import 'package:todo/presentation/pages/home/landing_page.dart';
@@ -11,7 +12,7 @@ import 'package:todo/presentation/pages/auth/login_page.dart';
 import 'package:todo/presentation/pages/auth/register_page.dart';
 import 'package:todo/presentation/pages/auth/reset_password_page.dart';
 import 'package:todo/presentation/bindings/quiz_bindings.dart';
-import 'package:todo/presentation/bindings/history_bindings.dart'; // 👈 IMPORTAR
+import 'package:todo/presentation/bindings/history_bindings.dart'; 
 
 class AppRoutes {
   static const landing = '/';
@@ -33,6 +34,7 @@ class AppRoutes {
         AuthBindings(),
         NoteBindings(),
         QuizBindings(),
+        UploadBindings(),
         HistoryBindings(),
       ],
       middlewares: [AuthMiddleware()],
