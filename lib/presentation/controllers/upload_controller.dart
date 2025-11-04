@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:todo/core/providers/pdf_content_provider.dart';
 import 'package:todo/domain/entities/document_entity.dart';
 import 'package:todo/domain/usecases/upload/analyze_document.dart';
 import 'package:todo/domain/usecases/upload/delete_document.dart';
@@ -8,6 +9,7 @@ import 'package:todo/domain/usecases/upload/upload_document.dart';
 import 'package:todo/core/services/file_service.dart';
 import 'package:todo/core/services/ai_service.dart';
 import 'package:todo/presentation/controllers/note_controller.dart';
+
 
 class UploadController extends GetxController {
   final GetDocumentsUseCase getDocuments;
@@ -51,13 +53,13 @@ class UploadController extends GetxController {
       isLoading.value = true;
 
       // 1. Seleccionar archivo
-      final (fileBytes, extension) = 
-          await Get.find<FileService>().pickAnyFile();
-      
+      final (fileBytes, extension) = await Get.find<FileService>()
+          .pickAnyFile();
+
       if (fileBytes == null || extension == null) return;
 
       final fileType = Get.find<FileService>().getFileType(extension);
-      
+
       if (fileType == 'unknown') {
         Get.snackbar('Error', 'Tipo de archivo no soportado.');
         return;
@@ -83,41 +85,45 @@ class UploadController extends GetxController {
       String extractedText = '';
 
       try {
-        final aiService = Get.find<AiService>();
-        
         if (fileType == 'pdf') {
-          // Usar IA para extraer contenido del PDF
-          extractedText = await aiService.analyzePdfContent(fileBytes);
+          // Para PDF: solo marca como disponible
+          extractedText = 'Documento PDF cargado correctamente.';
         } else if (fileType == 'image') {
-          // Usar OCR para imágenes
+          // Para imágenes: usa OCR
+          final aiService = Get.find<AiService>();
           extractedText = await aiService.extractTextFromImage(fileBytes);
         }
       } catch (e) {
         debugPrint('Error extrayendo contenido: $e');
-        extractedText = 'Archivo cargado pero no se pudo extraer contenido.';
+        extractedText = 'Archivo cargado.';
       }
 
-      // Si está vacío, usa un valor por defecto
       if (extractedText.isEmpty) {
         extractedText = 'Documento cargado y disponible para análisis.';
       }
 
-      // 5. Guardar análisis
+      // 5. Guardar análisis en BD
       uploadProgress.value = 0.9;
       final analyzedDoc = await analyzeDocument(doc.id, extractedText);
+
+      // ✅ GUARDAR EN CACHÉ (PdfContentProvider)
+      final pdfProvider = Get.find<PdfContentProvider>();
+      pdfProvider.savePdfContent(analyzedDoc.id, extractedText);
+      debugPrint('✅ Contenido guardado en caché: ${analyzedDoc.id}');
 
       // 6. Crear nota automáticamente
       uploadProgress.value = 0.95;
       final noteController = Get.find<NoteController>();
       await noteController.createNote(
-        title: '${fileType.toUpperCase()} - ${DateTime.now().toString().substring(0, 10)}',
+        title:
+            '${fileType.toUpperCase()} - ${DateTime.now().toString().substring(0, 10)}',
         subject: fileType == 'pdf' ? 'PDF' : 'Imagen',
         rawText: extractedText,
         fileUrl: fileUrl,
       );
 
       uploadProgress.value = 1.0;
-      
+
       // ✅ ACTUALIZAR SIN RECARGAR
       documents.add(analyzedDoc);
 

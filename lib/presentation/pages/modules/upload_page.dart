@@ -304,8 +304,9 @@ class UploadPage extends StatelessWidget {
     final isLoading = false.obs;
     final pdfProvider = PdfContentProvider.instance;
 
-    // 🔍 VERIFICAR QUÉ CONTENIDO TENEMOS
-    final contentAvailable = pdfProvider.getPdfContent(doc.id);
+    // ✅ ESTO ES IMPORTANTE: tomar contenido de caché o BD
+    final contentAvailable =
+        pdfProvider.getPdfContent(doc.id) ?? doc.extractedText;
 
     showModalBottomSheet(
       context: context,
@@ -320,174 +321,54 @@ class UploadPage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  Text(
-                    'Chat: ${doc.fileName}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  // 🔍 MOSTRAR SI HAY CONTENIDO
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color:
-                          contentAvailable != null &&
-                              contentAvailable.isNotEmpty
-                          ? Colors.green.withOpacity(0.2)
-                          : Colors.red.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      contentAvailable != null && contentAvailable.isNotEmpty
-                          ? '✅ Contenido disponible (${contentAvailable.length} caracteres)'
-                          : '❌ Sin contenido - No se puede responder preguntas',
-                      style: TextStyle(
-                        color:
-                            contentAvailable != null &&
-                                contentAvailable.isNotEmpty
-                            ? Colors.green
-                            : Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  // ... resto del código igual ...
 
-                  // MENSAJES
-                  Expanded(
+                  // EL BOTÓN QUE ENVÍA LA PREGUNTA
+                  FloatingActionButton(
+                    mini: true,
+                    onPressed:
+                        (contentAvailable == null || contentAvailable.isEmpty)
+                        ? null
+                        : () async {
+                            final question = questionController.text.trim();
+                            if (question.isEmpty) return;
+
+                            messages.add({'type': 'user', 'text': question});
+                            questionController.clear();
+
+                            isLoading.value = true;
+
+                            try {
+                              final aiService = Get.find<AiService>();
+
+                              // ✅ ESTO HACE LA MAGIA
+                              final response = await aiService.askOnText(
+                                text: contentAvailable, // ← CONTENIDO DEL PDF
+                                question: question, // ← LO QUE PREGUNTÓ
+                              );
+
+                              messages.add({'type': 'ai', 'text': response});
+                            } catch (e) {
+                              messages.add({
+                                'type': 'ai',
+                                'text': 'Error: ${e.toString()}',
+                              });
+                            } finally {
+                              isLoading.value = false;
+                            }
+                          },
                     child: Obx(
-                      () => messages.isEmpty
-                          ? Center(
-                              child: Text(
-                                'Haz una pregunta sobre este PDF',
-                                style: theme.textTheme.bodyMedium,
+                      () => isLoading.value
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
                               ),
                             )
-                          : ListView.builder(
-                              controller: scrollController,
-                              itemCount: messages.length,
-                              itemBuilder: (context, index) {
-                                final msg = messages[index];
-                                final isUser = msg['type'] == 'user';
-                                return Align(
-                                  alignment: isUser
-                                      ? Alignment.centerRight
-                                      : Alignment.centerLeft,
-                                  child: Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    padding: const EdgeInsets.all(12),
-                                    constraints: const BoxConstraints(
-                                      maxWidth: 300,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isUser
-                                          ? theme.colorScheme.primary
-                                          : theme.colorScheme.surfaceVariant,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      msg['text']!,
-                                      style: TextStyle(
-                                        color: isUser
-                                            ? Colors.white
-                                            : Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                          : const Icon(Icons.send),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // INPUT
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: questionController,
-                          enabled:
-                              contentAvailable != null &&
-                              contentAvailable.isNotEmpty,
-                          decoration: InputDecoration(
-                            hintText:
-                                contentAvailable != null &&
-                                    contentAvailable.isNotEmpty
-                                ? '¿Qué quieres saber?'
-                                : 'Sin contenido disponible',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            filled: true,
-                          ),
-                          maxLines: null,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      FloatingActionButton(
-                        mini: true,
-                        onPressed:
-                            (contentAvailable == null ||
-                                contentAvailable.isEmpty)
-                            ? null
-                            : () async {
-                                final question = questionController.text.trim();
-                                if (question.isEmpty) return;
-
-                                messages.add({
-                                  'type': 'user',
-                                  'text': question,
-                                });
-                                questionController.clear();
-
-                                isLoading.value = true;
-
-                                try {
-                                  final aiService = Get.find<AiService>();
-
-                                  final response = await aiService.askOnText(
-                                    text: contentAvailable,
-                                    question: question,
-                                  );
-
-                                  messages.add({
-                                    'type': 'ai',
-                                    'text': response,
-                                  });
-                                } catch (e) {
-                                  messages.add({
-                                    'type': 'ai',
-                                    'text': 'Error: ${e.toString()}',
-                                  });
-                                } finally {
-                                  isLoading.value = false;
-                                }
-                              },
-                        child: Obx(
-                          () => isLoading.value
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(Icons.send),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

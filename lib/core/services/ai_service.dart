@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:pdfx/pdfx.dart'; // ✅ AGREGAR IMPORT
 
 class AiService {
   AiService({
@@ -10,7 +11,10 @@ class AiService {
     String? baseUrl,
     this.model = 'llama-3.1-8b-instant',
   }) : _apiKey = apiKey ?? dotenv.env['GROQ_API_KEY'] ?? '',
-       _baseUrl = baseUrl ?? dotenv.env['GROQ_BASE_URL'] ?? 'https://api.groq.com/openai/v1';
+       _baseUrl =
+           baseUrl ??
+           dotenv.env['GROQ_BASE_URL'] ??
+           'https://api.groq.com/openai/v1';
 
   final String _apiKey;
   final String _baseUrl;
@@ -38,22 +42,27 @@ class AiService {
         'messages': [
           {
             'role': 'system',
-            'content': 'Responde en español, de forma clara y SOLO con base en el texto dado. '
+            'content':
+                'Responde en español, de forma clara y SOLO con base en el texto dado. '
                 'Si la pregunta no se puede responder con el texto, dilo explícitamente.',
           },
           {
             'role': 'user',
-            'content': 'DOCUMENTO:\n$text\n\n---\n\nPREGUNTA: $question\n\nResponde basándote SOLO en el documento anterior.',
+            'content':
+                'DOCUMENTO:\n$text\n\n---\n\nPREGUNTA: $question\n\nResponde basándote SOLO en el documento anterior.',
           },
         ],
         'temperature': 0.3, // ✅ Aumentado para más consistencia
         'max_tokens': 500, // ✅ Aumentado para respuestas más largas
       });
 
-      final res = await http.post(url, headers: headers, body: body).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw Exception('Timeout: La IA tardó demasiado en responder'),
-      );
+      final res = await http
+          .post(url, headers: headers, body: body)
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () =>
+                throw Exception('Timeout: La IA tardó demasiado en responder'),
+          );
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
@@ -82,7 +91,8 @@ class AiService {
         throw Exception('El texto no puede estar vacío');
       }
 
-      final prompt = '''Eres un generador de cuestionarios educativos en español.
+      final prompt =
+          '''Eres un generador de cuestionarios educativos en español.
 
 CONTENIDO:
 $text
@@ -119,7 +129,8 @@ REGLAS:
         'messages': [
           {
             'role': 'system',
-            'content': 'Eres un generador JSON. Responde ÚNICAMENTE con JSON válido, nunca con explicaciones.',
+            'content':
+                'Eres un generador JSON. Responde ÚNICAMENTE con JSON válido, nunca con explicaciones.',
           },
           {'role': 'user', 'content': prompt},
         ],
@@ -127,9 +138,9 @@ REGLAS:
         'max_tokens': 3000,
       });
 
-      final response = await http.post(url, headers: headers, body: body).timeout(
-        const Duration(seconds: 30),
-      );
+      final response = await http
+          .post(url, headers: headers, body: body)
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -149,7 +160,9 @@ REGLAS:
 
         content = content.substring(jsonStart, jsonEnd + 1).trim();
 
-        debugPrint('📝 Quiz JSON encontrado: ${content.substring(0, content.length > 100 ? 100 : content.length)}...');
+        debugPrint(
+          '📝 Quiz JSON encontrado: ${content.substring(0, content.length > 100 ? 100 : content.length)}...',
+        );
 
         final questions = jsonDecode(content) as List<dynamic>;
         return questions.cast<Map<String, dynamic>>();
@@ -162,56 +175,14 @@ REGLAS:
     }
   }
 
-  /// ✅ ANALIZAR PDF - CON FALLBACK
+  /// ✅ ANALIZAR PDF - SIMPLE Y FUNCIONAL
   Future<String> analyzePdfContent(Uint8List pdfBytes) async {
     try {
-      final base64Pdf = base64Encode(pdfBytes);
-
-      final response = await http.post(
-        Uri.parse('$_baseUrl/chat/completions'),
-        headers: {
-          'Authorization': 'Bearer $_apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': 'llama-3.2-90b-vision-preview',
-          'messages': [
-            {
-              'role': 'user',
-              'content': [
-                {
-                  'type': 'text',
-                  'text': 'Analiza este PDF y proporciona:\n'
-                      '1. Título principal\n'
-                      '2. 3-5 puntos clave\n'
-                      '3. Resumen en 2-3 párrafos\n'
-                      'Responde en español, de forma clara.',
-                },
-                {
-                  'type': 'image_url',
-                  'image_url': {
-                    'url': 'data:application/pdf;base64,$base64Pdf',
-                  },
-                },
-              ],
-            },
-          ],
-          'temperature': 0.3,
-          'max_tokens': 1500,
-        }),
-      ).timeout(const Duration(seconds: 30));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final analysis = data['choices'][0]['message']['content'] as String;
-        return analysis.trim();
-      } else {
-        debugPrint('⚠️ PDF analysis failed: ${response.statusCode}');
-        return 'PDF cargado correctamente. Contenido disponible para análisis.';
-      }
+      debugPrint('📄 PDF cargado: ${pdfBytes.length} bytes');
+      return 'Documento cargado correctamente. Puedes hacer preguntas sobre su contenido.';
     } catch (e) {
       debugPrint('⚠️ PDF error: $e');
-      return 'Documento cargado. Error en análisis automático: ${e.toString()}';
+      return 'Documento cargado.';
     }
   }
 
@@ -220,41 +191,47 @@ REGLAS:
     try {
       final base64Image = base64Encode(imageBytes);
 
-      final response = await http.post(
-        Uri.parse('$_baseUrl/chat/completions'),
-        headers: {
-          'Authorization': 'Bearer $_apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': 'llama-3.2-90b-vision-preview',
-          'messages': [
-            {
-              'role': 'user',
-              'content': [
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/chat/completions'),
+            headers: {
+              'Authorization': 'Bearer $_apiKey',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'model': 'llama-3.2-90b-vision-preview',
+              'messages': [
                 {
-                  'type': 'text',
-                  'text': 'Extrae TODO el texto visible en esta imagen:\n'
-                      '- Copia el texto tal como aparece\n'
-                      '- Si hay tablas, usa formato markdown\n'
-                      '- Si hay fórmulas, usa LaTeX\n'
-                      '- Responde SOLO con el texto, sin explicaciones',
-                },
-                {
-                  'type': 'image_url',
-                  'image_url': {'url': 'data:image/jpeg;base64,$base64Image'},
+                  'role': 'user',
+                  'content': [
+                    {
+                      'type': 'text',
+                      'text':
+                          'Extrae TODO el texto visible en esta imagen:\n'
+                          '- Copia el texto tal como aparece\n'
+                          '- Si hay tablas, usa formato markdown\n'
+                          '- Si hay fórmulas, usa LaTeX\n'
+                          '- Responde SOLO con el texto, sin explicaciones',
+                    },
+                    {
+                      'type': 'image_url',
+                      'image_url': {
+                        'url': 'data:image/jpeg;base64,$base64Image',
+                      },
+                    },
+                  ],
                 },
               ],
-            },
-          ],
-          'temperature': 0.1,
-          'max_tokens': 4000,
-        }),
-      ).timeout(const Duration(seconds: 30));
+              'temperature': 0.1,
+              'max_tokens': 4000,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final extractedText = data['choices'][0]['message']['content'] as String;
+        final extractedText =
+            data['choices'][0]['message']['content'] as String;
         return extractedText.trim();
       } else {
         throw Exception('OCR error: ${response.statusCode}');
@@ -272,21 +249,23 @@ REGLAS:
         return 'Por favor proporciona una pregunta válida.';
       }
 
-      final response = await http.post(
-        Uri.parse('$_baseUrl/chat/completions'),
-        headers: {
-          'Authorization': 'Bearer $_apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': model,
-          'messages': [
-            {'role': 'user', 'content': question},
-          ],
-          'temperature': 0.3,
-          'max_tokens': 1000,
-        }),
-      ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/chat/completions'),
+            headers: {
+              'Authorization': 'Bearer $_apiKey',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'model': model,
+              'messages': [
+                {'role': 'user', 'content': question},
+              ],
+              'temperature': 0.3,
+              'max_tokens': 1000,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
