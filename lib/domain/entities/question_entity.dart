@@ -9,7 +9,7 @@ class QuestionEntity {
   final String quizId;
   final QuestionType type;
   final String question;
-  final List<String> options; // Para multiple choice
+  final List<String> options; 
   final String correctAnswer;
   final String? explanation;
   final String? difficulty;

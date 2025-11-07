@@ -8,7 +8,6 @@
 
 #include <app_links/app_links_plugin_c_api.h>
 #include <file_selector_windows/file_selector_windows.h>
-#include <pdfx/pdfx_plugin.h>
 #include <rive_native/rive_native_plugin.h>
 #include <sqlite3_flutter_libs/sqlite3_flutter_libs_plugin.h>
 #include <url_launcher_windows/url_launcher_windows.h>
@@ -18,8 +17,6 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("AppLinksPluginCApi"));
   FileSelectorWindowsRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FileSelectorWindows"));
-  PdfxPluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("PdfxPlugin"));
   RiveNativePluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("RiveNativePlugin"));
   Sqlite3FlutterLibsPluginRegisterWithRegistrar(

@@ -7,7 +7,6 @@ import 'package:todo/presentation/routes.dart';
 import 'package:todo/presentation/bindings/auth_bindings.dart';
 import 'package:todo/core/services/ai_service.dart';
 import 'package:todo/core/services/file_service.dart';
-import 'package:todo/core/providers/pdf_content_provider.dart'; 
 
 
 Future<void> main() async {
@@ -17,7 +16,7 @@ Future<void> main() async {
 }
 
 
-// Inicialización separada y síncrona
+
 Future<void> initializeApp() async {
   try {
     await dotenv.load(fileName: ".env");
@@ -31,15 +30,12 @@ Future<void> initializeApp() async {
       ),
     );
 
-    // Registrar servicios externos/singletons después de Supabase
+    
     final groqKey = dotenv.env['GROQ_API_KEY'] ?? '';
     final groqBase = dotenv.env['GROQ_BASE_URL'] ?? 'https://api.groq.com/openai/v1';
     Get.put(AiService(apiKey: groqKey, baseUrl: groqBase), permanent: true);
     Get.put(FileService(), permanent: true);
     
-    // ✅ AGREGAR - PdfContentProvider para caché
-    Get.put(PdfContentProvider(), permanent: true);
-
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final event = data.event;
       if (event == AuthChangeEvent.passwordRecovery) {

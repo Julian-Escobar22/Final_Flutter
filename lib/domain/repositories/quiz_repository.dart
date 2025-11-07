@@ -15,7 +15,7 @@ abstract class QuizRepository {
     required String difficulty,
   });
 
-  /// Guarda el resultado de un intento de quiz
+  // Guarda el resultado de un intento de quiz
   Future<void> saveQuizResult({
     required String quizId,
     required int score,

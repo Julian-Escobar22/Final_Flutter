@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:pdfx/pdfx.dart'; // ✅ AGREGAR IMPORT
 
 class AiService {
   AiService({
@@ -52,8 +50,8 @@ class AiService {
                 'DOCUMENTO:\n$text\n\n---\n\nPREGUNTA: $question\n\nResponde basándote SOLO en el documento anterior.',
           },
         ],
-        'temperature': 0.3, // ✅ Aumentado para más consistencia
-        'max_tokens': 500, // ✅ Aumentado para respuestas más largas
+        'temperature': 0.3, 
+        'max_tokens': 500, 
       });
 
       final res = await http
@@ -172,17 +170,6 @@ REGLAS:
     } catch (e) {
       debugPrint('❌ Quiz error: $e');
       rethrow;
-    }
-  }
-
-  /// ✅ ANALIZAR PDF - SIMPLE Y FUNCIONAL
-  Future<String> analyzePdfContent(Uint8List pdfBytes) async {
-    try {
-      debugPrint('📄 PDF cargado: ${pdfBytes.length} bytes');
-      return 'Documento cargado correctamente. Puedes hacer preguntas sobre su contenido.';
-    } catch (e) {
-      debugPrint('⚠️ PDF error: $e');
-      return 'Documento cargado.';
     }
   }
 

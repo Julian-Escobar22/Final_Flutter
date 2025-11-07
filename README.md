@@ -1,144 +1,160 @@
-# Study AI
+StudyAI 🎓✨
+Una aplicación inteligente de gestión de estudio desarrollada en Flutter con integración de IA para análisis de documentos, generación automática de cuestionarios y chat interactivo sobre PDFs.
 
-Una aplicación de gestión de tareas desarrollada en Flutter con integración de Supabase para almacenamiento de datos.
+Características
+📝 Gestión de Notas: Crea, edita y organiza tus notas de estudio
 
-## Características
+🤖 Chat con IA: Conversa con una IA para resolver dudas sobre tus apuntes
 
-- ✅ Gestión completa de tareas (CRUD)
-- 📅 Selector de fechas interactivo
-- 🔄 Botón de recarga para sincronizar datos
-- 🎨 Interfaz moderna y atractiva
-- ☁️ Almacenamiento en la nube con Supabase
-- 📱 Diseño responsivo
+📄 Análisis de PDFs: Sube documentos PDF y haz preguntas sobre su contenido
 
-## Tecnologías Utilizadas
+❓ Generación de Quiz: Crea cuestionarios automáticamente desde tus notas
 
-- **Flutter**: Framework de desarrollo multiplataforma
-- **GetX**: Gestión de estado y navegación
-- **Supabase**: Base de datos y backend como servicio
-- **Dart**: Lenguaje de programación
+📊 Historial de Actividad: Rastrea tu progreso de estudio
 
-## Configuración de la Base de Datos
+☁️ Almacenamiento en la nube: Todos tus datos sincronizados con Supabase
 
-### Estructura de la Tabla `tasks`
+📱 Multiplataforma: Funciona en Web, Android e iOS
 
-Para configurar la base de datos en Supabase, ejecuta el siguiente SQL:
+Tecnologías Utilizadas
+Flutter: Framework de desarrollo multiplataforma
 
-```sql
--- Crear la tabla tasks
-CREATE TABLE tasks (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT,
-  date DATE NOT NULL,
-  start_time TIMESTAMP WITH TIME ZONE NOT NULL,
-  end_time TIMESTAMP WITH TIME ZONE NOT NULL,
-  is_completed BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+GetX: Gestión de estado y navegación
 
--- Crear índices para mejorar el rendimiento
-CREATE INDEX idx_tasks_start_time ON tasks(start_time);
-CREATE INDEX idx_tasks_is_completed ON tasks(is_completed);
+Supabase: Base de datos y almacenamiento en la nube
 
--- Habilitar Row Level Security (RLS)
-ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+Groq AI: Inteligencia artificial para generación de contenido
 
--- Política para permitir todas las operaciones (ajustar según necesidades de seguridad)
-CREATE POLICY "Allow all operations on tasks" ON tasks
-  FOR ALL USING (true);
-```
+Dart: Lenguaje de programación
 
-### Campos de la Tabla
+Configuración del Proyecto
+1. Clonar el Repositorio
+bash
+git clone https://github.com/tuusuario/studyai.git
+cd studyai
+2. Configurar Variables de Entorno
+Crea un archivo .env en la raíz del proyecto con las siguientes variables:
 
-| Campo          | Tipo                     | Descripción                                           |
-| -------------- | ------------------------ | ----------------------------------------------------- |
-| `id`           | UUID                     | Identificador único de la tarea (clave primaria)      |
-| `title`        | TEXT                     | Título de la tarea (requerido)                        |
-| `description`  | TEXT                     | Descripción detallada de la tarea (opcional)          |
-| `date`         | DATE                     | Fecha de creación de la tarea (opcional)              |
-| `start_time`   | TIMESTAMP WITH TIME ZONE | Fecha y hora de inicio de la tarea                    |
-| `end_time`     | TIMESTAMP WITH TIME ZONE | Fecha y hora de finalización de la tarea              |
-| `is_completed` | BOOLEAN                  | Estado de completado de la tarea (por defecto: false) |
-| `created_at`   | TIMESTAMP WITH TIME ZONE | Fecha de creación del registro                        |
-| `updated_at`   | TIMESTAMP WITH TIME ZONE | Fecha de última actualización                         |
+text
+SUPABASE_URL=tu_url_de_supabase_aqui
+SUPABASE_ANON_KEY=tu_clave_anonima_de_supabase_aqui
+GROQ_API_KEY=tu_api_key_de_groq_aqui
+GROQ_BASE_URL=https://api.groq.com/openai/v1
+Cómo Obtener las Claves
+Supabase:
 
-## Configuración del Proyecto
+Crea una cuenta en supabase.com
 
-### 1. Configurar Variables de Entorno
+Crea un nuevo proyecto
 
-Crea un archivo `.env` en la raíz del proyecto con tus credenciales de Supabase:
+Ve a Settings → API
 
-```env
-SUPABASE_URL=tu_supabase_url_aqui
-SUPABASE_ANON_KEY=tu_supabase_anon_key_aqui
-```
+Copia el URL y el anon public key
 
-### 2. Instalar Dependencias
+Groq AI:
 
-```bash
+Crea una cuenta en console.groq.com
+
+Ve a API Keys
+
+Genera una nueva API Key
+
+Copia la clave generada
+
+3. Instalar Dependencias
+bash
 flutter pub get
-```
-
-### 3. Ejecutar la Aplicación
-
-```bash
+4. Ejecutar la Aplicación
+bash
 flutter run
-```
+Arquitectura del Proyecto
+El proyecto sigue Clean Architecture con separación de responsabilidades:
 
-## Arquitectura del Proyecto
-
-El proyecto sigue una arquitectura limpia con separación de responsabilidades:
-
-```
+text
 lib/
 ├── core/
 │   ├── config/          # Configuración de Supabase
 │   ├── constants/       # Constantes de la aplicación
-│   └── utils/          # Utilidades generales
+│   ├── services/        # Servicios (AI, File Upload)
+│   └── providers/       # Proveedores de datos
 ├── data/
-│   ├── models/         # Modelos de datos
-│   └── repositories/   # Implementación de repositorios
+│   ├── models/          # Modelos de datos
+│   └── repositories/    # Implementación de repositorios
 ├── domain/
-│   ├── entities/       # Entidades del dominio
-│   ├── repositories/   # Interfaces de repositorios
-│   └── usecases/      # Casos de uso
+│   ├── entities/        # Entidades del dominio
+│   ├── repositories/    # Interfaces de repositorios
+│   └── usecases/        # Casos de uso
 └── presentation/
-    ├── controllers/    # Controladores GetX
-    ├── pages/         # Páginas de la aplicación
-    └── widgets/       # Widgets reutilizables
-```
+    ├── controllers/     # Controladores GetX
+    ├── pages/           # Páginas de la aplicación
+    └── widgets/         # Widgets reutilizables
+Funcionalidades Principales
+Gestión de Notas con IA
+Crear notas con títulos, materias y contenido
 
-## Funcionalidades Principales
+Chat con IA directamente sobre tus apuntes
 
-### Gestión de Tareas
+Generar cuestionarios automáticamente desde el contenido
 
-- **Crear**: Agregar nuevas tareas con título, descripción y horarios
-- **Leer**: Visualizar tareas organizadas por fecha
-- **Actualizar**: Modificar tareas existentes y marcar como completadas
-- **Eliminar**: Remover tareas no deseadas
+Organizar por materias para mejor estructuración
 
-### Navegación por Fechas
+Análisis de Documentos PDF
+Subir PDFs desde tu dispositivo
 
-- Selector de fechas intuitivo
-- Carga automática de tareas por fecha seleccionada
-- Indicadores visuales de días con tareas
+Extraer contenido automáticamente
 
-### Sincronización
+Hacer preguntas sobre el contenido del PDF
 
-- Botón de recarga manual para sincronizar datos
-- Indicadores de carga durante las operaciones
-- Manejo de errores y estados de carga
+Chat interactivo con respuestas basadas en el documento
 
-## Contribución
+Cuestionarios Inteligentes
+Generación automática de preguntas desde notas
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+Múltiples tipos de preguntas (opción múltiple, verdadero/falso)
 
-## Licencia
+Explicaciones detalladas para cada respuesta
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+Revisión de resultados al finalizar
+
+Historial de Actividad
+Registro cronológico de todas tus acciones
+
+Filtrado por tipo de actividad
+
+Seguimiento de progreso de estudio
+
+Modelos de IA Disponibles
+La aplicación utiliza varios modelos de Groq:
+
+llama-3.1-8b-instant: Chat general y análisis de texto
+
+mixtral-8x7b-32768: Respuestas complejas y contextuales
+
+llama-3.2-90b-vision-preview: Análisis de imágenes y PDFs
+
+Requisitos del Sistema
+Flutter SDK 3.0 o superior
+
+Dart 3.0 o superior
+
+Android Studio / Xcode (para desarrollo móvil)
+
+Conexión a internet
+
+Dependencias Principales
+text
+dependencies:
+  flutter:
+    sdk: flutter
+  get: ^4.6.6
+  supabase_flutter: ^2.0.0
+  flutter_dotenv: ^5.1.0
+  http: ^1.2.0
+  file_picker: ^6.1.1
+  intl: ^0.18.1
+
+
+Contacto
+Autor: Julian Escobar-Je82443@gmail.com
+
+¡Hecho con ❤️ y Flutter!

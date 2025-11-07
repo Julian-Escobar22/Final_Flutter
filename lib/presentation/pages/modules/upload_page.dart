@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:todo/core/services/ai_service.dart';
 import 'package:todo/presentation/controllers/upload_controller.dart';
-import 'package:todo/core/providers/pdf_content_provider.dart'; // ✅ AGREGAR
+import 'package:url_launcher/url_launcher.dart'; // ✅ Multiplataforma
 
 class UploadPage extends StatelessWidget {
   const UploadPage({Key? key}) : super(key: key);
@@ -52,7 +51,7 @@ class UploadPage extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Sube PDFs y haz preguntas con IA',
+          'Sube y gestiona tus documentos',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -75,7 +74,7 @@ class UploadPage extends StatelessWidget {
           context: context,
           icon: Icons.cloud_upload_outlined,
           title: 'Subir PDF',
-          description: 'Carga un archivo para analizar',
+          description: 'Carga un archivo para guardar',
           onTap: () => controller.processDocument(),
           theme: theme,
         ),
@@ -85,7 +84,7 @@ class UploadPage extends StatelessWidget {
           context: context,
           icon: Icons.folder_outlined,
           title: 'Mis PDFs',
-          description: 'Abre un PDF y haz preguntas',
+          description: 'Ver documentos cargados',
           onTap: () => _showPDFsList(context, controller, theme),
           theme: theme,
         ),
@@ -217,18 +216,20 @@ class UploadPage extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: Icon(Icons.picture_as_pdf, color: Colors.red),
+        leading: Icon(
+          doc.fileType == 'pdf' ? Icons.picture_as_pdf : Icons.image,
+          color: doc.fileType == 'pdf' ? Colors.red : Colors.blue,
+        ),
         title: Text(doc.fileName, maxLines: 1, overflow: TextOverflow.ellipsis),
         subtitle: Text(
-          'Toca para hacer preguntas',
-          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+          'Toca para ver detalles',
+          style: TextStyle(color: Colors.grey[600]),
         ),
         trailing: IconButton(
           icon: const Icon(Icons.delete_outline),
           onPressed: () => _confirmDelete(context, doc.id, controller),
         ),
-        // ✅ TAP PARA ABRIR CHAT
-        onTap: () => _showPDFChat(context, doc, theme),
+        onTap: () => _showDocumentPreview(context, doc, theme),
       ),
     );
   }
@@ -298,84 +299,135 @@ class UploadPage extends StatelessWidget {
     );
   }
 
-  void _showPDFChat(BuildContext context, dynamic doc, ThemeData theme) {
-    final questionController = TextEditingController();
-    final messages = <Map<String, String>>[].obs;
-    final isLoading = false.obs;
-    final pdfProvider = PdfContentProvider.instance;
-
-    // ✅ ESTO ES IMPORTANTE: tomar contenido de caché o BD
-    final contentAvailable =
-        pdfProvider.getPdfContent(doc.id) ?? doc.extractedText;
-
+  // ============ ✅ PREVIA DEL DOCUMENTO (CORREGIDA) ============
+  void _showDocumentPreview(BuildContext context, dynamic doc, ThemeData theme) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.9,
-          minChildSize: 0.5,
-          maxChildSize: 1,
-          builder: (context, scrollController) {
-            return Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // ... resto del código igual ...
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle para arrastrar
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
 
-                  // EL BOTÓN QUE ENVÍA LA PREGUNTA
-                  FloatingActionButton(
-                    mini: true,
-                    onPressed:
-                        (contentAvailable == null || contentAvailable.isEmpty)
-                        ? null
-                        : () async {
-                            final question = questionController.text.trim();
-                            if (question.isEmpty) return;
+              // Título
+              Text(
+                'Detalles del Documento',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
 
-                            messages.add({'type': 'user', 'text': question});
-                            questionController.clear();
+              // Info del archivo
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInfoRow('📄 Nombre:', doc.fileName),
+                    const Divider(height: 20),
+                    _buildInfoRow('📁 Tipo:', doc.fileType.toUpperCase()),
+                    const Divider(height: 20),
+                    _buildInfoRow(
+                      '📅 Cargado:',
+                      doc.uploadedAt.toString().substring(0, 16),
+                    ),
+                    const Divider(height: 20),
+                    _buildInfoRow(
+                      '✓ Estado:',
+                      doc.processed ? 'Procesado' : 'Procesando...',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
 
-                            isLoading.value = true;
-
-                            try {
-                              final aiService = Get.find<AiService>();
-
-                              // ✅ ESTO HACE LA MAGIA
-                              final response = await aiService.askOnText(
-                                text: contentAvailable, // ← CONTENIDO DEL PDF
-                                question: question, // ← LO QUE PREGUNTÓ
-                              );
-
-                              messages.add({'type': 'ai', 'text': response});
-                            } catch (e) {
-                              messages.add({
-                                'type': 'ai',
-                                'text': 'Error: ${e.toString()}',
-                              });
-                            } finally {
-                              isLoading.value = false;
-                            }
-                          },
-                    child: Obx(
-                      () => isLoading.value
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.send),
+              // ✅ BOTÓN CORREGIDO PARA ANDROID/IOS/WEB
+              if (doc.fileUrl != null && doc.fileUrl.isNotEmpty)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      try {
+                        final url = Uri.parse(doc.fileUrl);
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        } else {
+                          Get.snackbar(
+                            'Error',
+                            'No se puede abrir el documento',
+                          );
+                        }
+                      } catch (e) {
+                        Get.snackbar('Error', 'Error al abrir: $e');
+                      }
+                    },
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('Abrir Documento'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
-                ],
+                ),
+              const SizedBox(height: 12),
+
+              // Botón cerrar
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cerrar'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
               ),
-            );
-          },
+            ],
+          ),
         );
       },
+    );
+  }
+
+  // Helper para mostrar filas de info
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+        Flexible(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 14),
+            textAlign: TextAlign.right,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 
@@ -388,8 +440,8 @@ class UploadPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Eliminar PDF'),
-        content: const Text('¿Estás seguro de que quieres eliminar este PDF?'),
+        title: const Text('Eliminar Documento'),
+        content: const Text('¿Estás seguro de que quieres eliminar este documento?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

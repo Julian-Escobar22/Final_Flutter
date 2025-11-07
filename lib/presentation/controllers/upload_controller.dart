@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:todo/core/providers/pdf_content_provider.dart';
 import 'package:todo/domain/entities/document_entity.dart';
 import 'package:todo/domain/usecases/upload/analyze_document.dart';
 import 'package:todo/domain/usecases/upload/delete_document.dart';
@@ -8,8 +7,6 @@ import 'package:todo/domain/usecases/upload/get_documents.dart';
 import 'package:todo/domain/usecases/upload/upload_document.dart';
 import 'package:todo/core/services/file_service.dart';
 import 'package:todo/core/services/ai_service.dart';
-import 'package:todo/presentation/controllers/note_controller.dart';
-
 
 class UploadController extends GetxController {
   final GetDocumentsUseCase getDocuments;
@@ -47,7 +44,7 @@ class UploadController extends GetxController {
     }
   }
 
-  /// Subir PDF y EXTRAER contenido real
+  /// Subir PDF (SIN análisis complejo)
   Future<void> processDocument() async {
     try {
       isLoading.value = true;
@@ -80,7 +77,7 @@ class UploadController extends GetxController {
         fileType: fileType,
       );
 
-      // 4. ✅ EXTRAER CONTENIDO REAL DEL PDF
+      // 4. Procesar contenido
       uploadProgress.value = 0.8;
       String extractedText = '';
 
@@ -99,37 +96,21 @@ class UploadController extends GetxController {
       }
 
       if (extractedText.isEmpty) {
-        extractedText = 'Documento cargado y disponible para análisis.';
+        extractedText = 'Documento cargado correctamente.';
       }
 
-      // 5. Guardar análisis en BD
+      // 5. Guardar en BD
       uploadProgress.value = 0.9;
       final analyzedDoc = await analyzeDocument(doc.id, extractedText);
 
-      // ✅ GUARDAR EN CACHÉ (PdfContentProvider)
-      final pdfProvider = Get.find<PdfContentProvider>();
-      pdfProvider.savePdfContent(analyzedDoc.id, extractedText);
-      debugPrint('✅ Contenido guardado en caché: ${analyzedDoc.id}');
-
-      // 6. Crear nota automáticamente
-      uploadProgress.value = 0.95;
-      final noteController = Get.find<NoteController>();
-      await noteController.createNote(
-        title:
-            '${fileType.toUpperCase()} - ${DateTime.now().toString().substring(0, 10)}',
-        subject: fileType == 'pdf' ? 'PDF' : 'Imagen',
-        rawText: extractedText,
-        fileUrl: fileUrl,
-      );
-
       uploadProgress.value = 1.0;
 
-      // ✅ ACTUALIZAR SIN RECARGAR
+      // 6. Actualizar lista
       documents.add(analyzedDoc);
 
       Get.snackbar(
         '✓ Éxito',
-        'Documento subido y analizado',
+        'Documento subido correctamente',
         backgroundColor: Colors.green,
         colorText: Colors.white,
         duration: const Duration(seconds: 2),
